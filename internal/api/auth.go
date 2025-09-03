@@ -6,12 +6,6 @@ import (
 	"github.com/NickVasky/docstorage/internal/codegen/apicodegen"
 )
 
-// type AuthAPIServicer interface {
-// 	RegisterUser(context.Context, RegisterRequest) (ImplResponse, error)
-// 	AuthenticateUser(context.Context, string, string) (ImplResponse, error)
-// 	LogoutUser(context.Context) (ImplResponse, error)
-// }
-
 // Implements `AuthAPIServicer` interface from apicodegen package
 type AuthAPIService struct {
 }
