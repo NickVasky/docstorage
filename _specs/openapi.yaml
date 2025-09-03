@@ -1,0 +1,383 @@
+openapi: 3.0.0
+info:
+  title: Document Storage
+  version: "1.0.0"
+  description: REST API для работы с документами.
+  contact:
+    name: Nick Vasky
+
+servers:
+  - url: localhost:8080
+    description: Server path
+
+tags:
+  - name: auth
+    description: Операции, связанные с аутентификацией и регистрацией пользователей.
+  - name: documents
+    description: Операции для управления документами (загрузка, получение, удаление).
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+    XAuthToken:
+      type: apiKey
+      in: header
+      name: X-Auth-Token
+
+  schemas:
+    ErrorObj:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 123
+        text:
+          type: string
+          example: "so sad"
+      required: [code, text]
+
+    Envelope:
+      type: object
+      description: "Top-level envelope. Поля присутствуют только если заполнены."
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorObj"
+        response:
+          type: object
+          description: "Подтверждение действий (простые ответы)"
+        data:
+          type: object
+      example:
+        response:
+          token: "sfuqwejqjoiu93e29"
+
+    RegisterRequest:
+      type: object
+      properties:
+        login:
+          type: string
+          minLength: 8
+          pattern: "^[A-Za-z0-9]+$"
+          description: "Логин нового пользователя, минимальная длина 8, латиница и цифры"
+        pswd:
+          type: string
+          minLength: 8
+          description: "Пароль нового пользователя (валидация на сервере)"
+      required: [login, pswd]
+
+    AuthForm:
+      type: object
+      properties:
+        login:
+          type: string
+        pswd:
+          type: string
+      required: [login, pswd]
+      example:
+        login: "testuser"
+        pswd: "P@ssw0rd!"
+
+    UploadMeta:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "photo.jpg"
+        file:
+          type: boolean
+          example: true
+        public:
+          type: boolean
+          example: false
+        mime:
+          type: string
+          example: "image/jpeg"
+        grant:
+          type: array
+          items:
+            type: string
+          example: ["login1", "login2"]
+      required: [name, file]
+
+    DocumentItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "qwdj1q4o34u34ih759ou1"
+        name:
+          type: string
+          example: "photo.jpg"
+        mime:
+          type: string
+          example: "image/jpg"
+        file:
+          type: boolean
+          example: true
+        public:
+          type: boolean
+          example: false
+        created:
+          type: string
+          format: date-time
+          example: "2018-12-24 10:30:56"
+        grant:
+          type: array
+          items:
+            type: string
+
+    DocsListResponse:
+      type: object
+      properties:
+        docs:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentItem"
+
+    DeleteResponse:
+      type: object
+      description: "map<id, bool>"
+      additionalProperties:
+        type: boolean
+
+paths:
+  /api/register:
+    post:
+      operationId: registerUser
+      tags: [auth]
+      summary: Регистрация нового пользователя (только с токеном администратора)
+      description: Регистрирует нового пользователя. Требуется токен администратора.
+      security:
+        - BearerAuth: [] # Токен администратора
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+
+  /api/auth:
+    post:
+      operationId: authenticateUser
+      tags: [auth]
+      summary: Аутентификация пользователя
+      description: Аутентифицирует пользователя и возвращает токен доступа.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/AuthForm"
+      responses:
+        "200":
+          description: token returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        example: "sfuqwejqjoiu93e29"
+
+    delete:
+      operationId: logoutUser
+      tags: [auth]
+      summary: Завершение авторизованной сессии пользователя
+      description: Завершает текущую авторизованную сессию пользователя.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+
+  /api/docs:
+    get:
+      operationId: listDocuments
+      tags: [documents]
+      summary: Получение списка документов пользователя
+      description: Возвращает список документов пользователя. Можно фильтровать по login, key, value, limit.
+      parameters:
+        - name: login
+          in: query
+          schema:
+            type: string
+          description: "Опциональное поле. Если не указано — то список своих"
+        - name: key
+          in: query
+          schema:
+            type: string
+          description: "Filter column name"
+        - name: value
+          in: query
+          schema:
+            type: string
+          description: "Filter value"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: list of documents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/DocsListResponse"
+        "401":
+          description: Unauthorized
+
+    head:
+      operationId: headDocuments
+      tags: [documents]
+      summary: Получение списка документов (только заголовки)
+      description: Возвращает только заголовки списка документов пользователя.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK (no body)
+
+    post:
+      operationId: uploadDocument
+      tags: [documents]
+      summary: Загрузка нового документа пользователем
+      description: Загружает новый документ для пользователя. Требуется токен.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                meta:
+                  type: string
+                  #$ref: "#/components/schemas/UploadMeta"
+                  description: "Optional JSON meta (free form)."
+                json:
+                  type: string
+                  description: "Optional JSON payload (free form)."
+                file:
+                  type: string
+                  format: binary
+              required: [meta, file]
+            encoding:
+              meta:
+                contentType: application/json
+              json:
+                contentType: application/json
+      responses:
+        "200":
+          description: uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      json:
+                        type: object
+                      file:
+                        type: string
+        "400":
+          description: Bad request
+
+  /api/docs/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: "Document ID"
+
+    get:
+      operationId: getDocument
+      tags: [documents]
+      summary: Получение одного документа (файл или JSON)
+      description: Возвращает содержимое одного документа по ID (файл или JSON).
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK - file or JSON
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+                description: "If stored item is JSON (meta-only)."
+          headers:
+            ETag:
+              schema:
+                type: string
+            Last-Modified:
+              schema:
+                type: string
+                format: date-time
+        "304":
+          description: Not Modified (when If-None-Match / If-Modified-Since used)
+        "401":
+          description: Unauthorized
+
+    head:
+      operationId: headDocument
+      tags: [documents]
+      summary: Получение заголовков одного документа
+      description: Возвращает только заголовки одного документа по ID.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK (no body). Should return headers (Content-Type, Content-Length, ETag, Last-Modified).
+
+    delete:
+      operationId: deleteDocument
+      tags: [documents]
+      summary: Удаление документа пользователя
+      description: Удаляет документ пользователя по ID. Требуется токен.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope"
+        "403":
+          description: Forbidden (no rights)
