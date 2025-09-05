@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/NickVasky/docstorage/internal/api"
 	"github.com/NickVasky/docstorage/internal/closer"
 	"github.com/NickVasky/docstorage/internal/codegen/apicodegen"
 	"github.com/NickVasky/docstorage/internal/config"
@@ -63,12 +62,10 @@ func (a *App) initConfig(_ context.Context) error {
 	return nil
 }
 
-func (a *App) initHttpServer(_ context.Context) error {
-	docAPIService := api.NewDocumentsAPIService()
-	authAPIService := api.NewAuthAPIService()
+func (a *App) initHttpServer(ctx context.Context) error {
 
-	docAPIController := apicodegen.NewDocumentsAPIController(docAPIService)
-	authAPIController := apicodegen.NewAuthAPIController(authAPIService)
+	docAPIController := apicodegen.NewDocumentsAPIController(a.serviceProvider.DocAPIService(ctx))
+	authAPIController := apicodegen.NewAuthAPIController(a.serviceProvider.AuthAPIService())
 
 	router := a.newRouter(docAPIController, authAPIController)
 

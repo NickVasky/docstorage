@@ -10,7 +10,7 @@ import (
 type AuthAPIService struct {
 }
 
-func NewAuthAPIService() *AuthAPIService {
+func NewAuthAPIService() apicodegen.AuthAPIServicer {
 	s := new(AuthAPIService)
 	return s
 }
