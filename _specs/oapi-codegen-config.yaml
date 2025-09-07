@@ -1,0 +1,6 @@
+package: codegen
+generate:
+  - gorilla-server
+  - models
+  - types
+output: api.gen.go
