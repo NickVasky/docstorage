@@ -1,6 +1,0 @@
-packageName: apicodegen
-onlyInterfaces: true
-outputAsLibrary: true
-router: mux
-serverPort: 8080
-sourceFolder: apicodegen

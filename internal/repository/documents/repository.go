@@ -21,7 +21,8 @@ const (
 	isPublicColumn  = "is_public"
 	isFileColumn    = "is_file"
 	createdAtColumn = "created_at"
-	urlColumn       = "url"
+	urlColumn       = "doc_url"
+	docJsonColumn   = "doc_json"
 )
 
 var psq = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
@@ -46,8 +47,8 @@ func (r *repo) Add(ctx context.Context, meta models.DocumentMetadata) (uuid.UUID
 	var id uuid.UUID
 	builder := psq.
 		Insert(tableName).
-		Columns(idColumn, filenameColumn, mimeColumn, isPublicColumn, isFileColumn, createdAtColumn, urlColumn).
-		Values(meta.ID, meta.Name, meta.MimeType, meta.IsPublic, meta.IsFile, meta.CreatedAt, meta.URL).
+		Columns(idColumn, filenameColumn, mimeColumn, isPublicColumn, isFileColumn, createdAtColumn, urlColumn, docJsonColumn).
+		Values(meta.ID, meta.Name, meta.MimeType, meta.IsPublic, meta.IsFile, meta.CreatedAt, meta.URL, meta.JsonDoc).
 		Suffix("RETURNING id")
 
 	query, args, err := builder.ToSql()

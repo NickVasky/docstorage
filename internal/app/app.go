@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/NickVasky/docstorage/internal/api/codegen"
+	"github.com/NickVasky/docstorage/internal/api/handlers"
 	"github.com/NickVasky/docstorage/internal/closer"
-	"github.com/NickVasky/docstorage/internal/codegen/apicodegen"
 	"github.com/NickVasky/docstorage/internal/config"
+	"github.com/gorilla/mux"
 )
 
 type App struct {
@@ -64,10 +66,11 @@ func (a *App) initConfig(_ context.Context) error {
 
 func (a *App) initHttpServer(ctx context.Context) error {
 
-	docAPIController := apicodegen.NewDocumentsAPIController(a.serviceProvider.DocAPIService(ctx))
-	authAPIController := apicodegen.NewAuthAPIController(a.serviceProvider.AuthAPIService())
+	server := handlers.NewServerImpl(a.serviceProvider.APIService(ctx))
+	//authAPIController := apicodegen.NewAuthAPIController(a.serviceProvider.AuthAPIService())
 
-	router := a.newRouter(docAPIController, authAPIController)
+	router := mux.NewRouter()
+	codegen.HandlerFromMux(server, router)
 
 	httpServer := &http.Server{
 		Addr:    a.serviceProvider.HttpConfig().Address(),

@@ -1,3 +1,6 @@
 openapitools.json
 deploy/.env
 deploy/app
+.env
+.vscode/
+build

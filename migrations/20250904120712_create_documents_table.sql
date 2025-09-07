@@ -7,7 +7,8 @@ create table documents (
     is_public boolean not null,
     is_file boolean not null,
     created_at timestamptz not null default now(),
-    url text 
+    doc_json jsonb,
+    doc_url text 
 );
 -- +goose StatementEnd
 

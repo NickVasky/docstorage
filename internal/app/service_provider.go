@@ -4,9 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/NickVasky/docstorage/internal/api"
+	"github.com/NickVasky/docstorage/internal/api/service"
 	"github.com/NickVasky/docstorage/internal/closer"
-	"github.com/NickVasky/docstorage/internal/codegen/apicodegen"
 	"github.com/NickVasky/docstorage/internal/config"
 	"github.com/NickVasky/docstorage/internal/repository"
 	"github.com/NickVasky/docstorage/internal/repository/documents"
@@ -20,8 +19,7 @@ type serviceProvider struct {
 	documentsRepo repository.DocumentsRepo
 	pgConn        *pgxpool.Pool
 
-	docAPIService  apicodegen.DocumentsAPIServicer
-	authAPIService apicodegen.AuthAPIServicer
+	apiService service.ServiceInterface
 }
 
 func newServiceProvider() *serviceProvider {
@@ -83,16 +81,9 @@ func (s *serviceProvider) PgConn(ctx context.Context) *pgxpool.Pool {
 	return s.pgConn
 }
 
-func (s *serviceProvider) DocAPIService(ctx context.Context) apicodegen.DocumentsAPIServicer {
-	if s.docAPIService == nil {
-		s.docAPIService = api.NewDocumentsAPIService(s.DocumentsRepo(ctx))
+func (s *serviceProvider) APIService(ctx context.Context) service.ServiceInterface {
+	if s.apiService == nil {
+		s.apiService = service.NewServiceImpl(s.DocumentsRepo(ctx))
 	}
-	return s.docAPIService
-}
-
-func (s *serviceProvider) AuthAPIService() apicodegen.AuthAPIServicer {
-	if s.authAPIService == nil {
-		s.authAPIService = api.NewAuthAPIService()
-	}
-	return s.authAPIService
+	return s.apiService
 }

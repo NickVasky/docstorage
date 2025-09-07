@@ -45,11 +45,14 @@ components:
       properties:
         error:
           $ref: "#/components/schemas/ErrorObj"
+          nullable: true
         response:
           type: object
+          nullable: true
           description: "Подтверждение действий (простые ответы)"
         data:
           type: object
+          nullable: true
       example:
         response:
           token: "sfuqwejqjoiu93e29"
@@ -281,15 +284,18 @@ paths:
               properties:
                 meta:
                   type: string
-                  #$ref: "#/components/schemas/UploadMeta"
-                  description: "Optional JSON meta (free form)."
+                  $ref: "#/components/schemas/UploadMeta"
+                  description: "Upload metadata (required)"
                 json:
                   type: string
                   description: "Optional JSON payload (free form)."
+                  nullable: true
                 file:
                   type: string
+                  description: "Optional FILE payload."
                   format: binary
-              required: [meta, file]
+                  nullable: true
+              required: [meta]
             encoding:
               meta:
                 contentType: application/json

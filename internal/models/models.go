@@ -15,6 +15,7 @@ type DocumentMetadata struct {
 	IsPublic  bool
 	CreatedAt time.Time
 	URL       string
+	JsonDoc   []byte
 }
 
 type Document struct {
