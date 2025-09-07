@@ -1,0 +1,10 @@
+_specs
+build
+migrations
+.gitignore
+docker-compose.yaml
+Dockerfile
+Makefile
+LICENCE
+README.md
+.vscode/

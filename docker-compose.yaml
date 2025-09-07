@@ -1,0 +1,54 @@
+networks:
+  docs-service-network:
+    driver: bridge
+
+volumes:
+  minio-volume:
+  pg-volume:
+
+services:
+  app:
+    build: .
+    networks:
+      - docs-service-network
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    depends_on:
+      pg:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: ["sh", "-c", "./app"]
+
+  pg:
+    image: postgres:17.6-alpine3.22
+    networks:
+     - docs-service-network
+    volumes:
+      - pg-volume:/var/lib/postgresql/data/
+    ports:
+      - "${PG_PORT_EXTERNAL}:5432"
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  minio:
+    image: bitnami/minio:2025.7.23
+    networks:
+     - docs-service-network
+    volumes:
+      - minio-volume:/bitnami/minio/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
